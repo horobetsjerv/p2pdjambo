@@ -1,7 +1,6 @@
 import { type User, type InsertUser, type Registration, type InsertRegistration } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { Pool } from "pg"; // <-- РЕШЕНИЕ ПРОБЛЕМЫ 2: Добавлен импорт
-import "dotenv/config";
 
 // --- Интерфейсы ---
 
@@ -27,7 +26,8 @@ export class PgStorage implements IStorage {
 
   constructor() {
     this.pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: "postgresql://postgres:root@109.120.138.85:5432/p2p",
+      ssl: false
     });
     console.log("PostgreSQL storage initialized.");
   }
