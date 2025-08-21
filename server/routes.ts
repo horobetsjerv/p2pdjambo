@@ -23,13 +23,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!response.ok) throw new Error(response.statusText);
       const data = await response.json();
       const exportId = data.info.export_id;
+      await sleep(15000);
       try {
         const response = await fetch(`https://djambocommunity.getcourse.ru/pl/api/account/exports/${exportId}?key=6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E`)
         const data = await response.json();
         if (!data.success) {
           throw new Error("Не удалось получить данные экспорта");
         }
-        
+
       } catch (err) {
         console.error("Ошибка при обработке данных:", err);
       }
