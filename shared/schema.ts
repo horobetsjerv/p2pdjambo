@@ -14,6 +14,7 @@ export const registrations = pgTable("registrations", {
   name: text("name").notNull(),
   phone: text("phone").notNull(),
   email: text("email").notNull(),
+  telegram: text("telegram").notNull(),
   experience: text("experience"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -28,10 +29,12 @@ export const insertRegistrationSchema = createInsertSchema(registrations).pick({
   phone: true,
   email: true,
   experience: true,
+  telegram: true,
 }).extend({
   name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
   phone: z.string().regex(/^[\+]?[7|8]?[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$/, "Введите корректный номер телефона"),
   email: z.string().email("Введите корректный email"),
+  telegram: z.string(),
   experience: z.string().optional(),
 });
 
