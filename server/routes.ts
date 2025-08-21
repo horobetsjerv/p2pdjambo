@@ -21,8 +21,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
 
       if (!response.ok) throw new Error(response.statusText);
-
       const data = await response.json();
+      const exportId = data.info.export_id;
+      try {
+        const response = await fetch(`https://djambocommunity.getcourse.ru/pl/api/account/exports/${exportId}?key=6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E`)
+        const data = await response.json();
+        if (!data.success) {
+          throw new Error("Не удалось получить данные экспорта");
+        }
+        
+      } catch (err) {
+        console.error("Ошибка при обработке данных:", err);
+      }
       console.log("Сделки успешно получены:", data);
       res.status(200).json({ ok: true, data });
     } catch (err) {
@@ -48,45 +58,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Registration endpoint
-  app.post("/api/register", async (req, res) => {
-    try {
-      const validatedData = insertRegistrationSchema.parse(req.body);
-      const registration = await storage.createRegistration(validatedData);
 
-      // Send to Telegram bot
-      await sendToTelegramBot(registration);
 
-      res.json({ success: true, id: registration.id });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({
-          success: false,
-          message: "Ошибка валидации данных",
-          errors: error.errors
-        });
-      } else {
-        console.error("Registration error:", error);
-        res.status(500).json({
-          success: false,
-          message: "Произошла ошибка при обработке заявки"
-        });
-      }
-    }
-  });
-
-  // Get registrations endpoint (for admin purposes)
-  app.get("/api/registrations", async (req, res) => {
-    try {
-      const registrations = await storage.getRegistrations();
-      res.json(registrations);
-    } catch (error) {
-      console.error("Get registrations error:", error);
-      res.status(500).json({
-        success: false,
-        message: "Ошибка получения данных"
-      });
-    }
-  });
 
 
   app.post("/api/deal", async (req, res) => {
@@ -112,15 +85,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.log(req.body.decoded);
       try {
-        await fetch("https://0227aa62b56c.ngrok-free.app/create_order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: req.body.decoded // 
-        });
-      } catch (err) {
-        console.error("Не удалось отправить заказ в Telegram бот:", err);
-      }
+        const dealData = req.body.decoded;
+        if (!dealData?.deal?.deal_comment) {
+          console.error("Ошибка: в req.body.decoded отсутствуют данные о сделке.");
+          return;
+        }
 
+        const { deal } = dealData;
+        const parts = String(deal.deal_comment).split(" ");
+
+        // Парсим данные из комментария сделки
+        const orderToSave = {
+          name: parts[0] || "Имя не найдено",
+          telegram: parts.find(p => p.startsWith("@")) || null,
+          phone: parts.find(p => p.startsWith("+")) || null,
+          email: parts.find(p => p.includes("@") && !p.startsWith("@")) || null,
+          experience: parts.find(p => ["beginner", "intermediate", "advanced"].includes(p)) || null,
+          status: deal.deal_status,
+          deal_number: String(deal.deal_number)
+        };
+
+        // Вызываем метод из нашего PgStorage
+        await storage.createOrder(orderToSave);
+
+      } catch (dbError) {
+        console.error("Не удалось сохранить заказ в БД:", dbError);
+      }
 
     } catch (err) {
       console.error("Ошибка запроса в GetCourse:", err);

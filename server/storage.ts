@@ -1,54 +1,65 @@
 import { type User, type InsertUser, type Registration, type InsertRegistration } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { Pool } from "pg"; // <-- РЕШЕНИЕ ПРОБЛЕМЫ 2: Добавлен импорт
+import "dotenv/config";
 
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  createRegistration(registration: InsertRegistration): Promise<Registration>;
-  getRegistrations(): Promise<Registration[]>;
+// --- Интерфейсы ---
+
+export interface IOrder {
+  name: string;
+  telegram: string | null;
+  phone: string | null;
+  email: string | null;
+  experience: string | null;
+  status: string;
+  deal_number: string;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private registrations: Map<string, Registration>;
+// РЕШЕНИЕ ПРОБЛЕМЫ 1: Мы упростили интерфейс, оставив только то, что реально используется.
+export interface IStorage {
+  createOrder(order: IOrder): Promise<any>;
+}
+
+// --- Реализация PostgreSQL ---
+
+export class PgStorage implements IStorage {
+  private pool: Pool;
 
   constructor() {
-    this.users = new Map();
-    this.registrations = new Map();
+    this.pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    console.log("PostgreSQL storage initialized.");
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
+  // Теперь класс PgStorage корректно реализует интерфейс IStorage,
+  // так как в интерфейсе остался только один метод, и он здесь есть.
+  async createOrder(orderData: IOrder): Promise<any> {
+    const query = `
+      INSERT INTO orders (name, telegram, phone, email, experience, status, deal_number)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `;
+    const values = [
+      orderData.name,
+      orderData.telegram,
+      orderData.phone,
+      orderData.email,
+      orderData.experience,
+      orderData.status,
+      orderData.deal_number
+    ];
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
-
-  async createRegistration(insertRegistration: InsertRegistration): Promise<Registration> {
-    const id = randomUUID();
-    const registration: Registration = { 
-      ...insertRegistration, 
-      id,
-      createdAt: new Date(),
-    };
-    this.registrations.set(id, registration);
-    return registration;
-  }
-
-  async getRegistrations(): Promise<Registration[]> {
-    return Array.from(this.registrations.values());
+    try {
+      const result = await this.pool.query(query, values);
+      console.log("Заказ успешно сохранен в БД:", result.rows[0]);
+      return result.rows[0];
+    } catch (error) {
+      console.error("Ошибка при сохранении заказа в БД:", error);
+      throw error;
+    }
   }
 }
 
-export const storage = new MemStorage();
+// Экспортируем экземпляр PgStorage для использования во всем приложении
+export const storage = new PgStorage();
