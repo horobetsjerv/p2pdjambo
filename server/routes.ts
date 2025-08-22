@@ -85,6 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(400).json({ success: false, message: "Не удалось получить payment_link", data });
       }
       console.log(req.body.decoded);
+      console.log("req.body:", req.body);
       try {
         const dealData = req.body.decoded;
         if (!dealData?.deal?.deal_comment) {
