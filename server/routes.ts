@@ -27,6 +27,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const response = await fetch(`https://djambocommunity.getcourse.ru/pl/api/account/exports/${exportId}?key=6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E`)
         const data = await response.json();
+        console.log(data)
         if (!data.success) {
           throw new Error("Не удалось получить данные экспорта");
         }
