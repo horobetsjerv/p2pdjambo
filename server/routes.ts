@@ -84,10 +84,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(400).json({ success: false, message: "Не удалось получить payment_link", data });
       }
-      console.log(req.body.decoded);
+      let dealData = req.body.decoded;
+      if (typeof dealData === "string") {
+        try {
+          dealData = JSON.parse(dealData);
+        } catch (e) {
+          console.error("Не удалось распарсить decoded:", req.body.decoded);
+          return;
+        }
+      }
+      if (!dealData?.deal) {
+        console.error("Ошибка: нет deal в decoded", dealData);
+        return;
+      }
+      const { deal } = dealData;
+      console.log(deal);
       console.log("req.body:", req.body);
       try {
-        const dealData = req.body.decoded;
         if (!dealData?.deal?.deal_comment) {
           console.error("Ошибка: в req.body.decoded отсутствуют данные о сделке.");
           return;
