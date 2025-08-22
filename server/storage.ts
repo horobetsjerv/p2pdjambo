@@ -59,6 +59,18 @@ export class PgStorage implements IStorage {
       throw error;
     }
   }
+
+  async getAllDealIds(): Promise<string[]> {
+    const query = `SELECT deal_number FROM orders;`;
+    try {
+      const result = await this.pool.query(query);
+      return result.rows.map(row => String(row.deal_number));
+    } catch (error) {
+      console.error("Ошибка при получении deal_number из БД:", error);
+      throw error;
+    }
+  }
+
 }
 
 // Экспортируем экземпляр PgStorage для использования во всем приложении
