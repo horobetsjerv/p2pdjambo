@@ -24,13 +24,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = await response.json();
       const exportId = data.info.export_id;
       await sleep(15000);
-      const ids = storage.getAllDealIds()
+      const ids = await storage.getAllDealIds()
       try {
         console.log("exportId", exportId)
         const response = await fetch(`https://djambocommunity.getcourse.ru/pl/api/account/exports/${exportId}?key=6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E`)
         const data = await response.json();
         const items = data.info.items
-        const filteredItems = items.filter((item) => items.includes(String(item[1])));
+        const filteredItems = items.filter((item) => ids.includes(String(item[1])));
         console.log("Filtered Items:", filteredItems);
         if (!data.success) {
           throw new Error("Не удалось получить данные экспорта");
