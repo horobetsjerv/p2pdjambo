@@ -15,7 +15,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     await sleep(15000); // ждем 15 секунд перед запросом
 
-    const url = "https://djambocommunity.getcourse.ru/pl/api/account/deals?key=6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E&status=in_work&created_at[from]=2025-07-20";
+    const url = "https://djambocommunity.getcourse.ru/pl/api/account/deals?key=6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E&created_at[from]=2025-07-20";
 
     try {
       const response = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
@@ -31,6 +31,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const data = await response.json();
         const items = data.info.items
         const filteredItems = items.filter((item) => ids.includes(String(item[1])));
+        for (const item of filteredItems) {
+          const dealNumber = String(item[1]); // номер заказа
+          const newStatus = String(item[9]);
+          const existingOrder = await storage.getOrderByDealNumber(dealNumber);
+
+          if (existingOrder) {
+            // Проверяем: если статус изменился и стал "Завершен"
+            if (existingOrder.status !== newStatus && newStatus === "Завершен") {
+              // Обновляем статус в БД
+              const updated = await storage.updateOrderStatus(dealNumber, newStatus);
+
+              // Отправляем уведомление
+              try {
+                await fetch("http://localhost:8000/notify", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    message: `Заявка ${dealNumber} обновлена на "${newStatus}"`,
+                    order: updated // данные из БД после обновления
+                  }),
+                });
+                console.log(`Уведомление отправлено для ${dealNumber}`);
+              } catch (err) {
+                console.error("Не удалось отправить уведомление:", err);
+              }
+            }
+          }
+        }
         console.log("Filtered Items:", filteredItems);
         if (!data.success) {
           throw new Error("Не удалось получить данные экспорта");

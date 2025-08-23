@@ -71,6 +71,18 @@ export class PgStorage implements IStorage {
     }
   }
 
+  async getOrderByDealNumber(dealNumber: string) {
+    const query = `SELECT * FROM orders WHERE deal_number = $1 LIMIT 1;`;
+    const result = await this.pool.query(query, [dealNumber]);
+    return result.rows[0] || null;
+  }
+
+  async updateOrderStatus(dealNumber: string, newStatus: string) {
+    const query = `UPDATE orders SET status = $1 WHERE deal_number = $2 RETURNING *;`;
+    const result = await this.pool.query(query, [newStatus, dealNumber]);
+    return result.rows[0];
+  }
+
 }
 
 // Экспортируем экземпляр PgStorage для использования во всем приложении
