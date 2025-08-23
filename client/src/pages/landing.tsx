@@ -721,9 +721,33 @@ export default function Landing() {
                       <h3 className="text-2xl font-bold text-green-800 mb-2">
                         Заявка успешно отправлена!
                       </h3>
-                      <p className="text-green-600">
+                      <p className="text-green-600 mb-4">
                         Мы свяжемся с вами в ближайшее время
                       </p>
+                      <p className="text-gray-700 mb-4">
+                        Номер вашего платежа:{" "}
+                        <span className="font-bold">{newDealNumber}</span>
+                      </p>
+                      <Button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(
+                              `/api/check-payment?dealNumber=${newDealNumber}`
+                            );
+                            const result = await res.json();
+                            if (result?.paid) {
+                              alert("Оплата подтверждена!");
+                            } else {
+                              alert("Оплата пока не найдена.");
+                            }
+                          } catch (err) {
+                            alert("Ошибка проверки оплаты");
+                          }
+                        }}
+                        className="bg-crypto-blue text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all"
+                      >
+                        Проверить оплату
+                      </Button>
                     </div>
                   ) : (
                     <>
