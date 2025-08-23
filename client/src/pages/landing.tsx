@@ -36,6 +36,7 @@ import {
   PhoneCall,
   Mail,
   Star,
+  Loader2,
 } from "lucide-react";
 import { encode, decode } from "js-base64";
 
@@ -766,6 +767,9 @@ export default function Landing() {
                       >
                         Проверить оплату
                       </Button>
+                      {checkPaymentMutation.isPending && (
+                        <Loader2 className="animate-spin ml-2 h-4 w-4" />
+                      )}
                       {checkPaymentMutation.data && (
                         <p className="text-gray-700 mt-4">
                           {checkPaymentMutation.data.status === "Завершен" ? (
