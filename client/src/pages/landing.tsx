@@ -754,11 +754,13 @@ export default function Landing() {
                       <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
                       <p className="text-gray-700 mb-4">
                         Номер вашего платежа:{" "}
-                        <span className="font-bold">{newDealNumber}</span>
+                        <span className="font-bold">{dealNumber}</span>
                       </p>
                       <Button
                         onClick={() =>
-                          checkPaymentMutation.mutate(newDealNumber.toString())
+                          checkPaymentMutation.mutate(
+                            dealNumber?.toString() || ""
+                          )
                         }
                         className="bg-crypto-blue text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all"
                       >
