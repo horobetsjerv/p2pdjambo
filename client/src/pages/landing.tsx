@@ -41,6 +41,8 @@ import { encode, decode } from "js-base64";
 
 export default function Landing() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [dealNumber, setDealNumber] = useState<number | null>(null);
+
   const { toast } = useToast();
 
   const form = useForm<InsertRegistration>({
@@ -103,6 +105,8 @@ export default function Landing() {
       console.log("Response data:", data);
       if (data?.payment_link) {
         console.log("Payment link:", data.payment_link);
+        const number = newDealNumber;
+        setDealNumber(number); // сохраняем для последующей проверки
         window.open(data.payment_link, "_blank");
       }
     },
