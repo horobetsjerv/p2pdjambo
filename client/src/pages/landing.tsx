@@ -126,6 +126,36 @@ export default function Landing() {
     }
   };
 
+  const checkPaymentMutation = useMutation({
+    mutationFn: async (dealNumber: string) => {
+      const response = await fetch(`/api/check-payment/${dealNumber}`);
+      if (!response.ok) {
+        throw new Error("Не удалось проверить оплату");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Статус обновлен",
+        description: `Текущий статус: ${data.status}`,
+      });
+
+      if (data.paid) {
+        toast({
+          title: "Оплата подтверждена",
+          description: `Заявка ${data.dealNumber} успешно оплачена`,
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: error.message || "Не удалось проверить оплату",
+      });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
       {/* Navigation */}
@@ -718,36 +748,36 @@ export default function Landing() {
                   {isSubmitted ? (
                     <div className="text-center" data-testid="success-message">
                       <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-                      <h3 className="text-2xl font-bold text-green-800 mb-2">
-                        Заявка успешно отправлена!
-                      </h3>
-                      <p className="text-green-600 mb-4">
-                        Мы свяжемся с вами в ближайшее время
-                      </p>
                       <p className="text-gray-700 mb-4">
                         Номер вашего платежа:{" "}
                         <span className="font-bold">{newDealNumber}</span>
                       </p>
                       <Button
-                        onClick={async () => {
-                          try {
-                            const res = await fetch(
-                              `/api/check-payment?dealNumber=${newDealNumber}`
-                            );
-                            const result = await res.json();
-                            if (result?.paid) {
-                              alert("Оплата подтверждена!");
-                            } else {
-                              alert("Оплата пока не найдена.");
-                            }
-                          } catch (err) {
-                            alert("Ошибка проверки оплаты");
-                          }
-                        }}
+                        onClick={() =>
+                          checkPaymentMutation.mutate(newDealNumber.toString())
+                        }
                         className="bg-crypto-blue text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all"
                       >
                         Проверить оплату
                       </Button>
+                      {checkPaymentMutation.data && (
+                        <p className="text-gray-700 mt-4">
+                          {checkPaymentMutation.data.status === "Завершен" ? (
+                            <>
+                              Транзакция успешно завершена ✅ <br />
+                              <a
+                                href="https://t.me/+CUm6OZolqwAwYWUy"
+                                target="_blank"
+                                className="text-blue-600 underline"
+                              >
+                                Перейти
+                              </a>
+                            </>
+                          ) : (
+                            "Транзакция не оплачена или в обработке ❌"
+                          )}
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <>

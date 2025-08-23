@@ -75,6 +75,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/check-payment/:dealNumber", async (req, res) => {
+    const key =
+      "6o9VC1KAml7oyN5U9Nt1489CmDJTebhfBAn6yFrED6dMa61mVxHLhHP7AYTLZvS8FwClUuf1JWSwQMrASIzurR5OWx3TLIKkFYEQ9JZlqfi8pMF2Kd7KkMg34RfiWA5E";
+
+    const dealNumber = req.params.dealNumber;
+
+    if (!dealNumber) {
+      return res.status(400).json({ error: "dealNumber is required" });
+    }
+
+    try {
+      const url = `https://djambocommunity.getcourse.ru/pl/api/account/deals?key=${key}&created_at[from]=2025-07-20`;
+      const response = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+      if (!response.ok) throw new Error(response.statusText);
+
+      const data = await response.json();
+      const exportId = data.info.export_id;
+
+      // ждем пока экспорт соберется
+      await new Promise(r => setTimeout(r, 15000));
+
+      const exportResponse = await fetch(
+        `https://djambocommunity.getcourse.ru/pl/api/account/exports/${exportId}?key=${key}`
+      );
+      const exportData = await exportResponse.json();
+
+      const items = exportData.info.items;
+      const foundItem = items.find(item => String(item[1]) === dealNumber);
+
+      if (!foundItem) {
+        return res.status(404).json({ error: "Deal not found" });
+      }
+
+      const newStatus = String(foundItem[9]); // Статус сделки
+      const existingOrder = await storage.getOrderByDealNumber(dealNumber);
+
+      let updatedOrder = null;
+      if (existingOrder && existingOrder.status !== newStatus) {
+        updatedOrder = await storage.updateOrderStatus(dealNumber, newStatus);
+      }
+
+      res.json({
+        success: true,
+        dealNumber,
+        status: newStatus,
+        updated: updatedOrder,
+        paid: newStatus === "Завершен"
+      });
+    } catch (err) {
+      console.error("Ошибка проверки оплаты:", err);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // try {
 
